@@ -1,4 +1,5 @@
 %%
+%Main
 clear, clc;
 
 [l, u_max, m_0, M, step, T, eps, n] = ParamsInput();
@@ -27,17 +28,21 @@ for i = 1 : n
         tau_2 = ts(j);
 
         %Строится траектория для случая u_max -> u* -> ..., с переключениями в моменты tau_1 и tau_2
-        [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> u* -> ...', f1, cond, g, l, m_0, M, tspan, step, tau_1, tau_2, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);                    
+        [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> u* -> ...', f1, cond, g, l, m_0, M, tspan, step, tau_1, ...
+                                                                      tau_2, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);                    
 
         %Строится траектория для случая u_max -> 0 -> ..., с переключениями в моменты tau_1 и tau_2
-        [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> 0 -> ...', f1, cond, g, l, m_0, M, tspan, step, tau_1, tau_2, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);                    
+        [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> 0 -> ...', f1, cond, g, l, m_0, M, tspan, step, tau_1, ...
+                                                                      tau_2, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);                    
     end
 
     %Случай соответствует u_max -> 0 с выходом на границу конечного мн-ва по x_2 (v(T) \in [-eps, eps]) 
-    [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> 0, eps', f1, cond, g, l, m_0, M, tspan, step, tau_1, T, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);
+    [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> 0, eps', f1, cond, g, l, m_0, M, tspan, step, tau_1, T, T, ...
+                                                                  x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);
     
     %Случай соответствует u_max -> 0 с выходом на границу конечного мн-ва по x_3 (m(T) = M) 
-    [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> 0, M', f1, cond, g, l, m_0, M, tspan, step, tau_1, T, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);
+    [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory('u_max -> 0, M', f1, cond, g, l, m_0, M, tspan, step, tau_1, T, T, ...
+                                                                  x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max);
 end
 
 if i_best
@@ -54,8 +59,9 @@ end
 %Визуализация результатов
 draw_graphics(x_memory, psi_memory, u_memory, tspan(1 : end - 2), u_max, T, i_best);
 
-%Сократить длину строк
-%%
+
+%% 
+% Functions
 function [l, u_max, m_0, M, step, T, eps, n] = ParamsInput()
 
     l = input('Введите l > 0 - коэффициент, определяющий силу, действующую на ракету со стороны сгорающего топлива\n');
@@ -92,10 +98,12 @@ function [f1, cond] = FirstStageSearchPsi_0(u_max, g, l, m_0, tau_1)
     cond = [v(tau_1), m(tau_1), psi(tau_1)];
 end
 
-function [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory(str, f1, cond, g, l, m_0, M, tspan, step, tau_1, tau_2, T, x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max)
+function [x_memory, psi_memory, u_memory, i_best, h_best] = trajectory(str, f1, cond, g, l, m_0, M, tspan, step, tau_1, tau_2, T, ...
+                                                                       x_memory, psi_memory, u_memory, eps, h_best, i_best, u_max)
     
     psi_0 = SecondStageSearchPsi_0(str, f1, cond, g, l, tau_1, tau_2);
-    [x_memory, psi_memory, u_memory, i_best, h_best] = Check_and_Building(str, g, m_0, M, psi_0, tspan, tau_1, step, tau_2, x_memory, psi_memory, u_memory, eps, h_best, i_best, l, T, u_max);               
+    [x_memory, psi_memory, u_memory, i_best, h_best] = Check_and_Building(str, g, m_0, M, psi_0, tspan, tau_1, step, tau_2, x_memory, ...
+                                                                          psi_memory, u_memory, eps, h_best, i_best, l, T, u_max);               
     
 end
 
@@ -152,7 +160,8 @@ function psi_0 = SecondStageSearchPsi_0(str, f1, cond, g, l, tau_1, tau_2)
     psi_0 = double([sol.psi_2_0, sol.psi_3_0]);        
 end
 
-function [x_memory, psi_memory, u_memory, i_best, h_best] = Check_and_Building(str, g, m_0, M, psi_0, tspan, tau_1, step, tau_2, x_memory, psi_memory, u_memory, eps, h_best, i_best, l, T, u_max)
+function [x_memory, psi_memory, u_memory, i_best, h_best] = Check_and_Building(str, g, m_0, M, psi_0, tspan, tau_1, step, tau_2, x_memory, ...
+                                                                               psi_memory, u_memory, eps, h_best, i_best, l, T, u_max)
     %Системы для численного решения
     dxdt_uMax = @(t, x) [x(2);
                         -g + (x(2) + l) / x(3) * u_max;
